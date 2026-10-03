@@ -1,0 +1,1011 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Passport & Visa Photo Alignment Workspace</title>
+<style>
+    body {
+        font-family:
+            -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+            Helvetica, Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background-color: #f5f5f7;
+        margin: 0;
+        padding: 20px;
+    }
+    .container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background: white;
+        padding: 24px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        max-width: 900px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    /* Dual-Layer Workspace setup for Canvas underneath rigid template guidelines */
+    .canvas-container {
+        position: relative;
+        width: 600px;
+        height: 600px;
+        margin-top: 20px;
+        border: 2px solid #ccc;
+        background-color: #e5e5e5;
+        overflow: hidden;
+        cursor: grab;
+        border-radius: 8px;
+    }
+    .canvas-container:active {
+        cursor: grabbing;
+    }
+    canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 1;
+    }
+    /* Pure CSS spec-compliant template overlay matching uploaded document ratios */
+    .guide-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 600px;
+        height: 600px;
+        z-index: 2;
+        pointer-events: none; /* Mouse interactions bypass overlay layer down to workspace container */
+    }
+    .center-line {
+        position: absolute;
+        left: 50%;
+        top: 0;
+        bottom: 0;
+        width: 1px;
+        border-left: 3px dashed rgb(255 0 225 / 38%);
+    }
+    .head-zone {
+        position: absolute;
+        left: 23%;
+        right: 23%;
+        top: 10%; /* 100% - 69% max target limit from bottom = 31% from top boundary */
+        height: 65%; /* 69% - 50% = 19% vertical span height target */
+        border: 2px solid rgba(0, 128, 255, 0.7);
+        background-color: rgba(0, 128, 255, 0.08);
+        border-radius: 4px;
+    }
+    .head-label {
+        position: absolute;
+        top: -20px;
+        left: 0;
+        font-size: 11px;
+        color: #0080ff;
+        font-weight: bold;
+        text-shadow: 1px 1px 1px white;
+    }
+    .eye-line {
+        position: absolute;
+        left: 5%;
+        right: 5%;
+        bottom: 55%; /* 56% target scale line from bottom */
+        height: 10%; /* 69% - 56% = 13% target thickness box */
+        border-top: 2px dashed rgba(0, 200, 80, 0.8);
+        border-bottom: 2px dashed rgba(0, 200, 80, 0.8);
+        background-color: rgba(0, 200, 80, 0.05);
+    }
+    .eye-label {
+        position: absolute;
+        top: 2px;
+        left: 5px;
+        font-size: 11px;
+        color: rgba(0, 150, 50, 1);
+        font-weight: bold;
+        text-shadow: 1px 1px 1px white;
+    }
+    .controls-info {
+        margin-top: 15px;
+        font-size: 14px;
+        color: #666;
+        text-align: center;
+        line-height: 1.5;
+    }
+    /* Configuration Input Interface Panel */
+    .export-panel {
+        margin-top: 25px;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        width: 100%;
+        box-sizing: border-box;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        align-items: end;
+        border: 1px solid #e9ecef;
+    }
+    .input-group {
+        display: flex;
+        flex-direction: column;
+    }
+    .input-group label {
+        font-size: 13px;
+        font-weight: bold;
+        color: #495057;
+        margin-bottom: 6px;
+    }
+    .input-group select,
+    .input-group input {
+        padding: 8px;
+        border-radius: 5px;
+        border: 1px solid #ced4da;
+        font-size: 14px;
+        background: white;
+    }
+    .generate-btn {
+        padding: 12px 24px;
+        background: #28a745;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-weight: bold;
+        cursor: pointer;
+        font-size: 15px;
+        transition: background 0.2s;
+        width: 100%;
+    }
+    .generate-btn:hover {
+        background: #218838;
+    }
+    /* Matrix Preview Grid Dashboard Cards */
+    .matrix-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 20px;
+        margin-top: 30px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .preview-card {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+        text-align: center;
+        border: 1px solid #e2e8f0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        transition: transform 0.2s;
+    }
+    .preview-card:hover {
+        transform: translateY(-2px);
+    }
+    .card-title {
+        margin: 0 0 6px 0;
+        font-size: 15px;
+        color: #2d3748;
+    }
+    .card-meta {
+        margin: 0 0 14px 0;
+        font-size: 13px;
+        color: #718096;
+    }
+    .card-img-wrapper {
+        width: 100%;
+        max-width: 200px;
+        aspect-ratio: 1;
+        border: 1px solid #edf2f7;
+        background: #f7fafc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 15px;
+        overflow: hidden;
+        border-radius: 6px;
+    }
+    .card-img-wrapper img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+    .download-opt-btn {
+        margin-top: auto;
+        padding: 8px 16px;
+        background: #007aff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 13px;
+        width: 100%;
+        transition: background 0.1s;
+    }
+    .download-opt-btn:hover {
+        background: #0056b3;
+    }
+    /* Size Limit Constraint Flags */
+    .status-badge {
+        font-size: 11px;
+        font-weight: bold;
+        padding: 3px 8px;
+        border-radius: 20px;
+        margin-bottom: 10px;
+    }
+    .badge-pass {
+        background-color: #e6fffa;
+        color: #00a389;
+        border: 1px solid #b2f5ea;
+    }
+    .badge-fail {
+        background-color: #fff5f5;
+        color: #e53e3e;
+        border: 1px solid #fed7d7;
+    }
+
+    /* Container framework maintaining strict aspect bounds over the canvases */
+    .comparison-slider-container {
+        position: relative;
+        width: 100%;
+        margin: 15px auto;
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+
+    .comparison-slider-container .slider-canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        background: #f7fafc;
+    }
+
+    /* Invisible overlay slider input range capturing user adjustments */
+    .slider-range-control {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        opacity: 0;
+        cursor: ew-resize;
+        z-index: 10;
+    }
+
+    /* High contrast physical boundary marker slicing the preview fields */
+    .slider-divider-line {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background-color: #ffffff;
+        box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+        pointer-events: none;
+        z-index: 5;
+        transform: translateX(-50%);
+    }
+
+    /* Optional stylistic drag-handle icon center knot */
+    .slider-divider-line::after {
+        content: "↔";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 28px;
+        height: 28px;
+        background-color: #ffffff;
+        color: #4a5568;
+        font-size: 14px;
+        font-weight: bold;
+        text-align: center;
+        line-height: 26px;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    /* Text contextual baseline tags identifying comparison regions */
+    .slider-label {
+        position: absolute;
+        bottom: 10px;
+        padding: 4px 8px;
+        background: rgba(0, 0, 0, 0.6);
+        color: #ffffff;
+        font-size: 11px;
+        font-weight: 500;
+        border-radius: 4px;
+        pointer-events: none;
+        user-select: none;
+        z-index: 4;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .label-before { left: 10px; }
+    .label-after { right: 10px; }
+
+    /* Status Compliance UI overrides matching your preview matrix specifications */
+    .status-badge {
+        display: inline-block;
+        padding: 5px 10px;
+        font-size: 12px;
+        font-weight: 700;
+        border-radius: 20px;
+        margin: 6px 0;
+    }
+    .badge-pass { background-color: #e6fffa; color: #319795; }
+    .badge-fail { background-color: #fff5f5; color: #e53e3e; }
+
+    /* Container block creating the large side-by-side workspace split */
+    .split-workspace-panel {
+        display: flex;
+        flex-direction: row;
+        gap: 32px;
+        align-items: flex-start;
+        width: 100%;
+        max-width: 1400px; /* Expands parent space to allow wide canvases */
+        margin: 0 auto;
+        padding: 24px;
+    }
+
+    /* Fixes the width of control options to minimize text footprint */
+    .panel-controls-sidebar {
+        width: 320px;
+        background: #ffffff;
+        padding: 24px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+        border: 1px solid #e2e8f0;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        flex-shrink: 0;
+    }
+
+    /* Let the canvas matrix expand dynamically across remaining whitespace */
+    .panel-matrix-display {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        width: 100%;
+    }
+
+    .input-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .input-group label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #475569;
+    }
+
+    .input-group select,
+    .input-group input {
+        padding: 10px 14px;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        background-color: #ffffff;
+        font-size: 0.95rem;
+        color: #1e293b;
+        outline: none;
+        width: 100%;
+    }
+
+    .input-group select:focus,
+    .input-group input:focus {
+        border-color: #0070f3;
+    }
+
+    .generate-btn {
+        background: #1e293b;
+        color: #ffffff;
+        border: none;
+        border-radius: 6px;
+        padding: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s ease;
+        width: 100%;
+        font-size: 0.95rem;
+    }
+
+    .generate-btn:hover {
+        background: #0f172a;
+    }
+
+    /* Collapse to stacked view if screen is too narrow */
+    @media (max-width: 1024px) {
+        .split-workspace-panel {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 24px;
+        }
+        .panel-controls-sidebar {
+            width: 100%;
+        }
+    }
+
+    /* Isolated Parent Section Layout */
+    .preview-results-section {
+        width: 100%;
+        max-width: 1400px;
+        margin: 32px auto 0 auto;
+        padding: 0 24px;
+        clear: both; /* Prevents any floating element pollution */
+    }
+
+    .section-heading {
+        font-size: 1.4rem;
+        color: #0f172a;
+        margin-bottom: 20px;
+        font-weight: 700;
+        border-bottom: 2px solid #e2e8f0;
+        padding-bottom: 8px;
+    }
+
+    /* Master Display Grid for Previews */
+    .panel-matrix-display {
+        display: flex;
+        flex-direction: column;
+        gap: 32px; /* Generous separation spacing between workspace canvases */
+        width: 100%;
+        position: relative;
+        z-index: 10;
+    }
+
+    /* Ensure the cards clear internal sizing bounds */
+    .split-layout-card {
+        display: flex;
+        flex-direction: row;
+        align-items: stretch;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        width: 100%;
+        min-height: 500px;
+        height: auto; /* Allow dynamic height changes */
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+        position: relative; /* Isolates absolute elements inside this block only */
+    }
+
+    .split-slider-container {
+        position: relative;
+        flex-grow: 1;
+        background: #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: ew-resize;
+        user-select: none;
+        overflow: hidden;
+    }
+
+    .comparison-canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain; /* Keeps image safely locked inside its bounds */
+        max-height: 550px;
+    }
+
+    /* Highly visible split tracking line */
+    .slider-handle {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 2px; /* Distinct line thickness */
+        background: #ffffff; /* Crisp white center core line */
+        /* Twin drop shadows ensure the line stands out on both solid white and pitch black backgrounds */
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.6), 0 0 4px rgba(0, 0, 0, 0.8);
+        pointer-events: none;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 20;
+    }
+
+    /* Center circle knob indicator to help users grab and slide */
+    .handle-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        background: #ffffff;
+        border: 2px solid #1e293b;
+        border-radius: 50%;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        color: #1e293b;
+        font-weight: bold;
+        font-size: 14px;
+        flex-shrink: 0;
+    }
+
+</style>
+</head>
+<body>
+<div class="container">
+    <h2>Photo Alignment, Crop & Compress Tool</h2>
+    <input type="file" id="upload" accept="image/png, image/jpeg" />
+
+    <div class="canvas-container" id="workspace">
+        <canvas id="photoCanvas" width="600" height="600"></canvas>
+        <div class="guide-overlay">
+            <div class="center-line"></div>
+            <div class="head-zone">
+                <span class="head-label">
+                    FACE TARGET ZONE
+                </span>
+            </div>
+            <div class="eye-line">
+                <span class="eye-label">
+                    EYE LEVEL TARGET ZONE
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls-info">
+        <strong>Workspace Actions:</strong> Drag mouse to Pan image
+        position | Use your mouse Scroll Wheel to Zoom.<br />
+        ⌨️ Use keyboard <strong>Arrow Keys</strong> for
+        micro-adjustments down to the exact pixel.
+    </div>
+
+    <!-- Parameter Configurations Board -->
+    <div class="export-panel split-workspace-panel">
+        <!-- Left Hand Control Suite -->
+        <div class="panel-controls-sidebar">
+            <div class="input-group">
+                <label for="formatSelect">File Format</label>
+                <select id="formatSelect">
+                    <option value="jpeg">JPEG (.jpg)</option>
+                    <option value="png">PNG (.png)</option>
+                    <option value="webp">WebP (.webp)</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label for="resSelect">Target Output Dimensions</label>
+                <select id="resSelect">
+                    <option value="600">600 x 600 px (Standard)</option>
+                    <option value="900">900 x 900 px (Mid-res)</option>
+                    <option value="1200">1200 x 1200 px (Max Legal)</option>
+                    <option value="custom">Custom Dimension...</option>
+                </select>
+                <input
+                    type="number"
+                    id="customResInput"
+                    value="600"
+                    min="100"
+                    max="4000"
+                    style="display: none; margin-top: 6px"
+                />
+            </div>
+
+            <div class="input-group">
+                <label for="sizeCeiling">Size Compliance Alert Trigger</label>
+                <select id="sizeCeiling">
+                    <option value="240">Flag over 240 KB (US Visa Specs)</option>
+                    <option value="60">Flag over 60 KB (Online Form Specs)</option>
+                    <option value="0">No Size Limits / Verification</option>
+                </select>
+            </div>
+
+            <div class="workspace-actions" style="display: flex; gap: 10px;">
+                <button id="rotateBtn" class="action-btn" style="flex-grow: 1; padding: 10px; font-weight: 600; cursor: pointer;">
+                    🔄 Rotate 90° Clockwise
+                </button>
+                <button id="downloadCroppedBtn" class="action-btn primary-action" style="flex-grow: 1; padding: 10px; background: #22c55e; color: #fff; border: none; border-radius: 4px; font-weight: 600; cursor: pointer;">
+                    🎯 Save Cropped Output
+                </button>
+            </div>
+
+            <div>
+                <button id="generatePreviewsBtn" class="generate-btn">
+                    🔍 Generate Compression Options
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dedicated Separate Preview Output Section Base -->
+    <div class="preview-results-section">
+        <h3 class="section-heading" id="previewSectionHeader" style="display: none;">Compression Tier Analyses</h3>
+        <div id="previewMatrix" class="panel-matrix-display">
+            <!-- Structural split-slider blocks inject here -->
+        </div>
+    </div>
+
+</div>
+<script type="module">
+    import init, { ImageProcessor } from "./pkg/photo_processor.js";
+    let processor = null;
+    let isDragging = false;
+    let lastMouseX = 0;
+    let lastMouseY = 0;
+
+    // Cache the loaded workspace image element globally to optimize layout rendering loops
+    let activeWorkspaceImage = null;
+
+    const canvas = document.getElementById("photoCanvas");
+    const ctx = canvas.getContext("2d");
+    const workspace = document.getElementById("workspace");
+    const resSelect = document.getElementById("resSelect");
+    const customResInput = document.getElementById("customResInput");
+    const formatSelect = document.getElementById("formatSelect");
+    const sizeCeiling = document.getElementById("sizeCeiling");
+    const generatePreviewsBtn = document.getElementById("generatePreviewsBtn");
+    const previewMatrix = document.getElementById("previewMatrix");
+
+    // Launch WebAssembly core binary runtime module assets
+    async function start() {
+        await init();
+        console.log("WASM Processing Engine fully bound and operational.");
+    }
+    start();
+
+    // Catch image load requests across local binary stream bridges
+    document.getElementById("upload").addEventListener("change", async (e) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+
+        const arrayBuffer = await files[0].arrayBuffer();
+        const byteArray = new Uint8Array(arrayBuffer);
+
+        // Instantiate our main Rust application core model structure container logic
+        processor = new ImageProcessor(byteArray);
+
+        // Pre-render the HTML Image instance once to eliminate workspace flashing/flickering
+        if (activeWorkspaceImage) {
+            URL.revokeObjectURL(activeWorkspaceImage.src);
+        }
+        activeWorkspaceImage = new Image();
+        activeWorkspaceImage.src = URL.createObjectURL(files[0]);
+        activeWorkspaceImage.onload = () => {
+            drawWorkspace();
+        };
+    });
+
+    // Redraw loop matrix rendering workspace state slices
+    function drawWorkspace() {
+        if (!processor || !activeWorkspaceImage) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const pos = processor.get_position();
+        const zoom = processor.get_zoom();
+        const rotation = processor.get_rotation(); // Read the dynamic canvas rotation angle states
+
+        ctx.save();
+        // 1. Shift canvas alignment structure relative to dragging positions
+        ctx.translate(canvas.width / 2 + pos[0], canvas.height / 2 + pos[1]);
+
+        // 2. Project rotation angles safely matching degrees parameters
+        ctx.rotate((rotation * Math.PI) / 180);
+
+        // 3. Apply standard scaling factor layers
+        ctx.scale(zoom, zoom);
+
+        ctx.drawImage(activeWorkspaceImage, -activeWorkspaceImage.width / 2, -activeWorkspaceImage.height / 2);
+        ctx.restore();
+    }
+
+    // Toggle custom entry boxes contextually matching selection triggers
+    resSelect.addEventListener("change", (e) => {
+        customResInput.style.display = e.target.value === "custom" ? "block" : "none";
+    });
+
+    // --- Interactive Mouse/Touch Workspace Listeners ---
+    workspace.addEventListener("mousedown", (e) => {
+        if (!processor) return;
+        isDragging = true;
+        lastMouseX = e.clientX;
+        lastMouseY = e.clientY;
+    });
+
+    window.addEventListener("mousemove", (e) => {
+        if (!isDragging || !processor) return;
+        const dx = e.clientX - lastMouseX;
+        const dy = e.clientY - lastMouseY;
+        processor.pan_image(dx, dy);
+        lastMouseX = e.clientX;
+        lastMouseY = e.clientY;
+        drawWorkspace();
+    });
+
+    window.addEventListener("mouseup", () => { isDragging = false; });
+
+    workspace.addEventListener("wheel", (e) => {
+        if (!processor) return;
+        e.preventDefault();
+        const zoomDelta = e.deltaY < 0 ? 0.04 : -0.04;
+        processor.zoom_image(zoomDelta);
+        drawWorkspace();
+    }, { passive: false });
+
+    window.addEventListener("keydown", (e) => {
+        if (!processor) return;
+        let moved = false;
+        switch(e.key) {
+            case "ArrowUp":    processor.pan_image(0, -1); moved = true; break;
+            case "ArrowDown":  processor.pan_image(0, 1);  moved = true; break;
+            case "ArrowLeft":  processor.pan_image(-1, 0); moved = true; break;
+            case "ArrowRight": processor.pan_image(1, 0);  moved = true; break;
+        }
+        if (moved) {
+            e.preventDefault();
+            drawWorkspace();
+        }
+    });
+
+    document.getElementById("rotateBtn").addEventListener("click", () => {
+        if (!processor) return;
+        processor.rotate_clockwise();
+        drawWorkspace(); // Re-render instantly
+    });
+
+    document.getElementById("downloadCroppedBtn").addEventListener("click", async () => {
+        if (!processor) {
+            alert("Please select and upload an original file into the viewport workspace first.");
+            return;
+        }
+
+        let dimension = parseInt(resSelect.value, 10);
+        if (resSelect.value === "custom") {
+            dimension = parseInt(customResInput.value, 10) || 600;
+        }
+
+        try {
+            // Export the current crop at 100% maximum lossless parameters as a base PNG
+            const rawBytes = processor.export_at_quality(formatSelect.value, dimension, dimension, 100);
+
+            // Read Base64 Data URI asynchronously to safely bypass local network security rules
+            const dataUri = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(new Blob([rawBytes], { type: "image/png" }));
+                reader.onloadend = () => resolve(reader.result);
+                reader.onerror = reject;
+            });
+
+            const anchor = document.createElement("a");
+            anchor.href = dataUri;
+            anchor.download = `cropped_photo_${dimension}px.png`;
+            document.body.appendChild(anchor);
+            anchor.click();
+            document.body.removeChild(anchor);
+        } catch (err) {
+            console.error("Failed to export standalone crop view matrix profile layouts:", err);
+        }
+    });
+
+    // Helper utility to convert uncompressed fallback data layers from Rust smoothly into compressed WebP Blobs
+    function compressToWebPNative(pngBytes, dim, qualityValue) {
+        return new Promise((resolve, reject) => {
+            const pngBlob = new Blob([pngBytes], { type: "image/png" });
+            const tempUrl = URL.createObjectURL(pngBlob);
+            const img = new Image();
+            img.src = tempUrl;
+            img.onload = () => {
+                URL.revokeObjectURL(tempUrl);
+                const offscreenCanvas = document.createElement("canvas");
+                offscreenCanvas.width = dim;
+                offscreenCanvas.height = dim;
+                const oCtx = offscreenCanvas.getContext("2d");
+                if (!oCtx) return reject(new Error("Canvas context generation breakdown."));
+
+                oCtx.drawImage(img, 0, 0);
+                offscreenCanvas.toBlob((webpBlob) => {
+                    if (webpBlob) resolve(webpBlob);
+                    else reject(new Error("WebP context encoder failure."));
+                }, "image/webp", qualityValue / 100);
+            };
+            img.onerror = () => {
+                URL.revokeObjectURL(tempUrl);
+                reject(new Error("Intermediate decompression layer failure."));
+            };
+        });
+    }
+
+    // --- Compression Matrix Option Multi-Generation Logic ---
+    generatePreviewsBtn.addEventListener("click", async () => {
+        if (!processor || !activeWorkspaceImage) {
+            alert("Please select and upload an original file into the viewport workspace first.");
+            return;
+        }
+        previewMatrix.innerHTML = ""; // Empty out older target calculations
+
+        let dimension = parseInt(resSelect.value, 10);
+        if (resSelect.value === "custom") {
+            dimension = parseInt(customResInput.value, 10) || 600;
+        }
+
+        const selectedFormat = formatSelect.value;
+        const ceilingKb = parseInt(sizeCeiling.value, 10);
+
+        // Define our 3 preview test tiers (High, Balanced, Maximum Compression)
+        const qualityTiers = [
+            { title: "High Quality Version", quality: 92 },
+            { title: "Balanced Version", quality: 70 },
+            { title: "High Compression Version", quality: 40 }
+        ];
+
+        // 1. Generate an uncompressed PNG reference of the user's current crop alignment state out of Rust
+        const uncompressedBytes = processor.export_at_quality("png", dimension, dimension, 100);
+        const uncompressedBlob = new Blob([uncompressedBytes], { type: "image/png" });
+
+        // Convert the reference bytes to a loadable HTML Image Element
+        const imgOriginal = await new Promise((resolve) => {
+            const img = new Image();
+            img.src = URL.createObjectURL(uncompressedBlob);
+            img.onload = () => resolve(img);
+        });
+
+        // Show the results section heading dynamically
+        document.getElementById("previewSectionHeader").style.display = "block";
+        previewMatrix.innerHTML = "";
+
+        for (const tier of qualityTiers) {
+            try {
+                // 2. Fetch the target compression bytes from our hybrid pipeline setup
+                const outputBytes = processor.export_at_quality(selectedFormat, dimension, dimension, tier.quality);
+
+                let finalBlob;
+                if (selectedFormat === "webp") {
+                    finalBlob = await compressToWebPNative(outputBytes, dimension, tier.quality);
+                } else {
+                    const mimeType = selectedFormat === "jpeg" ? "image/jpeg" : "image/png";
+                    finalBlob = new Blob([outputBytes], { type: mimeType });
+                }
+
+                const currentKb = finalBlob.size / 1024;
+                const blobUrl = URL.createObjectURL(finalBlob);
+
+                // Convert the compressed bytes to a loadable HTML Image Element
+                const imgCompressed = await new Promise((resolve) => {
+                    const img = new Image();
+                    img.src = blobUrl;
+                    img.onload = () => resolve(img);
+                });
+
+                // Build status verification flags based on choice configuration profiles
+                let badgeHtml = "";
+                if (ceilingKb > 0) {
+                    if (currentKb <= ceilingKb) {
+                        badgeHtml = `<span class="status-badge badge-pass">✓ COMPLIANT (${currentKb.toFixed(1)} KB)</span>`;
+                    } else {
+                        badgeHtml = `<span class="status-badge badge-fail">⚠️ EXCEEDS CEILING (${currentKb.toFixed(1)} KB / Max ${ceilingKb}KB)</span>`;
+                    }
+                } else {
+                    badgeHtml = `<span class="status-badge" style="background:#edf2f7; color:#4a5568;">SIZE: ${currentKb.toFixed(1)} KB</span>`;
+                }
+
+                // 3. Construct an expanded split-screen comparison layout frame container
+                const card = document.createElement("div");
+                card.className = "preview-card split-layout-card";
+                card.innerHTML = `
+                    <div class="card-sidebar">
+                        <div class="sidebar-header">
+                            <h4 class="card-title">${tier.title}</h4>
+                            <div class="card-meta">Quality Factor: <strong>${tier.quality}%</strong></div>
+                            ${badgeHtml}
+                        </div>
+                        <button class="download-opt-btn">💾 Download File</button>
+                    </div>
+                    <div class="split-slider-container">
+                        <canvas class="comparison-canvas"></canvas>
+                        <!-- The visual vertical line tracking element -->
+                        <div class="slider-handle">
+                            <div class="handle-button">↔</div>
+                        </div>
+                        <div class="label-badge label-orig">ORIGINAL</div>
+                        <div class="label-badge label-comp">COMPRESSED</div>
+                    </div>
+                `;
+
+                // Handle file downloads
+                card.querySelector(".download-opt-btn").addEventListener("click", () => {
+                    const ext = selectedFormat === "jpeg" ? "jpg" : selectedFormat;
+                    const anchor = document.createElement("a");
+                    anchor.href = blobUrl;
+                    anchor.download = `photo_${dimension}px_q${tier.quality}.${ext}`;
+                    document.body.appendChild(anchor);
+                    anchor.click();
+                    document.body.removeChild(anchor);
+                });
+
+                previewMatrix.appendChild(card);
+
+                // 4. Initialize the comparison rendering context for this specific tier canvas
+                const compCanvas = card.querySelector(".comparison-canvas");
+                const compCtx = compCanvas.getContext("2d");
+                const sliderContainer = card.querySelector(".split-slider-container");
+                const handle = card.querySelector(".slider-handle");
+
+                // Lock internal buffer coordinate metrics to clean 600x600 high-res preview dimensions
+                compCanvas.width = 600;
+                compCanvas.height = 600;
+
+                // Tracks slider split boundary location natively (default center: 50%)
+                let sliderPos = 0.5;
+
+                function renderComparison() {
+                    compCtx.clearRect(0, 0, compCanvas.width, compCanvas.height);
+                    const splitX = compCanvas.width * sliderPos;
+
+                    // Layer A: Paint the full original background image context layer
+                    compCtx.drawImage(imgOriginal, 0, 0, compCanvas.width, compCanvas.height);
+
+                    // Layer B: Clip context bounds horizontally and project the compressed canvas matrix layer
+                    compCtx.save();
+                    compCtx.beginPath();
+                    compCtx.rect(splitX, 0, compCanvas.width - splitX, compCanvas.height);
+                    compCtx.clip();
+                    compCtx.drawImage(imgCompressed, 0, 0, compCanvas.width, compCanvas.height);
+                    compCtx.restore();
+
+                    // Position the structural visual control divider handle matching current states
+                    handle.style.left = `${sliderPos * 100}%`;
+                }
+
+                // Interactive slider input binding loops
+                function updateSliderFromEvent(e) {
+                    const rect = sliderContainer.getBoundingClientRect();
+                    // Get touch input locations or mouse placement coordinates
+                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                    let x = clientX - rect.left;
+
+                    // Clamp values safely between 0% and 100% canvas bounds limits
+                    x = Math.max(0, Math.min(x, rect.width));
+                    sliderPos = x / rect.width;
+                    renderComparison();
+                }
+
+                let isSliding = false;
+
+                const startSliding = (e) => {
+                    isSliding = true;
+                    updateSliderFromEvent(e);
+                };
+
+                const stopSliding = () => { isSliding = false; };
+
+                const moveSliding = (e) => {
+                    if (!isSliding) return;
+                    updateSliderFromEvent(e);
+                };
+
+                // Mouse interaction hooks
+                sliderContainer.addEventListener("mousedown", startSliding);
+                window.addEventListener("mouseup", stopSliding);
+                window.addEventListener("mousemove", moveSliding);
+
+                // Touch support hooks for mobile compatibility metrics
+                sliderContainer.addEventListener("touchstart", startSliding, { passive: true });
+                window.addEventListener("touchend", stopSliding);
+                window.addEventListener("touchmove", moveSliding, { passive: true });
+
+                // Kick off initial rendering state sweep
+                renderComparison();
+
+            } catch (error) {
+                console.error("Error creating slider preview card context: ", error);
+            }
+        }
+        document.getElementById("previewSectionHeader").scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+</script>
+</body>
+</html>
