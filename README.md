@@ -16,7 +16,7 @@ A high-performance, client-side image alignment, cropping, and compression engin
 ------------------------------
 ## Structural Overview
 The core image processing layer lives inside src/lib.rs and exposes the ImageProcessor interface to JavaScript applications:
-
+```rust
 pub struct ImageProcessor {
     original_image: DynamicImage,
     offset_x: i32,
@@ -24,19 +24,14 @@ pub struct ImageProcessor {
     zoom_factor: f32,
     rotation_angle: i32,
 }
-
+```
 ## Core API Methods
 
-* ImageProcessor::new(raw_bytes: &[u8]) -> Result<ImageProcessor, JsValue>
-Decodes raw binary file buffers directly into a stateful Rust instance.
-* pan_image(dx: i32, dy: i32)
-Applies directional transforms modified by current rotation angles.
-* zoom_image(factor_delta: f32)
-Alters scale factor using absolute relative zoom parameters.
-* rotate_clockwise()
-Shifts structural output target frames incrementally by 90°.
-* export_at_quality(format_str: &str, target_w: u32, target_h: u32, quality: u8) -> Result<Vec<u8>, JsValue>
-Slices matching coordinate bounds and generates compressed binary assets.
+* ```ImageProcessor::new(raw_bytes: &[u8]) -> Result<ImageProcessor, JsValue>```: Decodes raw binary file buffers directly into a stateful Rust instance.
+* ```pan_image(dx: i32, dy: i32)```: Applies directional transforms modified by current rotation angles.
+* ```zoom_image(factor_delta: f32)```: Alters scale factor using absolute relative zoom parameters.
+* ```rotate_clockwise()```: Shifts structural output target frames incrementally by 90°.
+* ```export_at_quality(format_str: &str, target_w: u32, target_h: u32, quality: u8) -> Result<Vec<u8>, JsValue>```: Slices matching coordinate bounds and generates compressed binary assets.
 
 ------------------------------
 ## Building and Compilation## Prerequisites

@@ -1,0 +1,520 @@
+body {
+    font-family:
+        -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        Helvetica, Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #f5f5f7;
+    margin: 0;
+    padding: 20px;
+}
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: white;
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    max-width: 900px;
+    width: 100%;
+    box-sizing: border-box;
+}
+/* Dual-Layer Workspace setup for Canvas underneath rigid template guidelines */
+.canvas-container {
+    position: relative;
+    width: 600px;
+    height: 600px;
+    margin-top: 20px;
+    border: 2px solid #ccc;
+    background-color: #e5e5e5;
+    overflow: hidden;
+    cursor: grab;
+    border-radius: 8px;
+}
+.canvas-container:active {
+    cursor: grabbing;
+}
+canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+/* Pure CSS spec-compliant template overlay matching uploaded document ratios */
+.guide-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 600px;
+    height: 600px;
+    z-index: 2;
+    pointer-events: none; /* Mouse interactions bypass overlay layer down to workspace container */
+}
+.center-line {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    border-left: 3px dashed rgb(255 0 225 / 38%);
+}
+.head-zone {
+    position: absolute;
+    left: 23%;
+    right: 23%;
+    top: 10%; /* 100% - 69% max target limit from bottom = 31% from top boundary */
+    height: 65%; /* 69% - 50% = 19% vertical span height target */
+    border: 2px solid rgba(0, 128, 255, 0.7);
+    background-color: rgba(0, 128, 255, 0.08);
+    border-radius: 4px;
+}
+.head-label {
+    position: absolute;
+    top: -20px;
+    left: 0;
+    font-size: 11px;
+    color: #0080ff;
+    font-weight: bold;
+    text-shadow: 1px 1px 1px white;
+}
+.eye-line {
+    position: absolute;
+    left: 5%;
+    right: 5%;
+    bottom: 55%; /* 56% target scale line from bottom */
+    height: 10%; /* 69% - 56% = 13% target thickness box */
+    border-top: 2px dashed rgba(0, 200, 80, 0.8);
+    border-bottom: 2px dashed rgba(0, 200, 80, 0.8);
+    background-color: rgba(0, 200, 80, 0.05);
+}
+.eye-label {
+    position: absolute;
+    top: 2px;
+    left: 5px;
+    font-size: 11px;
+    color: rgba(0, 150, 50, 1);
+    font-weight: bold;
+    text-shadow: 1px 1px 1px white;
+}
+.controls-info {
+    margin-top: 15px;
+    font-size: 14px;
+    color: #666;
+    text-align: center;
+    line-height: 1.5;
+}
+/* Configuration Input Interface Panel */
+.export-panel {
+    margin-top: 25px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    width: 100%;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    align-items: end;
+    border: 1px solid #e9ecef;
+}
+.input-group {
+    display: flex;
+    flex-direction: column;
+}
+.input-group label {
+    font-size: 13px;
+    font-weight: bold;
+    color: #495057;
+    margin-bottom: 6px;
+}
+.input-group select,
+.input-group input {
+    padding: 8px;
+    border-radius: 5px;
+    border: 1px solid #ced4da;
+    font-size: 14px;
+    background: white;
+}
+.generate-btn {
+    padding: 12px 24px;
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 15px;
+    transition: background 0.2s;
+    width: 100%;
+}
+.generate-btn:hover {
+    background: #218838;
+}
+/* Matrix Preview Grid Dashboard Cards */
+.matrix-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 20px;
+    margin-top: 30px;
+    width: 100%;
+    box-sizing: border-box;
+}
+.preview-card {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+    text-align: center;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    transition: transform 0.2s;
+}
+.preview-card:hover {
+    transform: translateY(-2px);
+}
+.card-title {
+    margin: 0 0 6px 0;
+    font-size: 15px;
+    color: #2d3748;
+}
+.card-meta {
+    margin: 0 0 14px 0;
+    font-size: 13px;
+    color: #718096;
+}
+.card-img-wrapper {
+    width: 100%;
+    max-width: 200px;
+    aspect-ratio: 1;
+    border: 1px solid #edf2f7;
+    background: #f7fafc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 15px;
+    overflow: hidden;
+    border-radius: 6px;
+}
+.card-img-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+.download-opt-btn {
+    margin-top: auto;
+    padding: 8px 16px;
+    background: #007aff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 13px;
+    width: 100%;
+    transition: background 0.1s;
+}
+.download-opt-btn:hover {
+    background: #0056b3;
+}
+/* Size Limit Constraint Flags */
+.status-badge {
+    font-size: 11px;
+    font-weight: bold;
+    padding: 3px 8px;
+    border-radius: 20px;
+    margin-bottom: 10px;
+}
+.badge-pass {
+    background-color: #e6fffa;
+    color: #00a389;
+    border: 1px solid #b2f5ea;
+}
+.badge-fail {
+    background-color: #fff5f5;
+    color: #e53e3e;
+    border: 1px solid #fed7d7;
+}
+
+/* Container framework maintaining strict aspect bounds over the canvases */
+.comparison-slider-container {
+    position: relative;
+    width: 100%;
+    margin: 15px auto;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.comparison-slider-container .slider-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: #f7fafc;
+}
+
+/* Invisible overlay slider input range capturing user adjustments */
+.slider-range-control {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: ew-resize;
+    z-index: 10;
+}
+
+/* High contrast physical boundary marker slicing the preview fields */
+.slider-divider-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: #ffffff;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+    z-index: 5;
+    transform: translateX(-50%);
+}
+
+/* Optional stylistic drag-handle icon center knot */
+.slider-divider-line::after {
+    content: "↔";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 28px;
+    height: 28px;
+    background-color: #ffffff;
+    color: #4a5568;
+    font-size: 14px;
+    font-weight: bold;
+    text-align: center;
+    line-height: 26px;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+/* Text contextual baseline tags identifying comparison regions */
+.slider-label {
+    position: absolute;
+    bottom: 10px;
+    padding: 4px 8px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 500;
+    border-radius: 4px;
+    pointer-events: none;
+    user-select: none;
+    z-index: 4;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.label-before { left: 10px; }
+.label-after { right: 10px; }
+
+/* Status Compliance UI overrides matching your preview matrix specifications */
+.status-badge {
+    display: inline-block;
+    padding: 5px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 20px;
+    margin: 6px 0;
+}
+.badge-pass { background-color: #e6fffa; color: #319795; }
+.badge-fail { background-color: #fff5f5; color: #e53e3e; }
+
+/* Container block creating the large side-by-side workspace split */
+.split-workspace-panel {
+    display: flex;
+    flex-direction: row;
+    gap: 32px;
+    align-items: flex-start;
+    width: 100%;
+    max-width: 1400px; /* Expands parent space to allow wide canvases */
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Fixes the width of control options to minimize text footprint */
+.panel-controls-sidebar {
+    width: 320px;
+    background: #ffffff;
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    border: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    flex-shrink: 0;
+}
+
+/* Let the canvas matrix expand dynamically across remaining whitespace */
+.panel-matrix-display {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    width: 100%;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.input-group label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #475569;
+}
+
+.input-group select,
+.input-group input {
+    padding: 10px 14px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background-color: #ffffff;
+    font-size: 0.95rem;
+    color: #1e293b;
+    outline: none;
+    width: 100%;
+}
+
+.input-group select:focus,
+.input-group input:focus {
+    border-color: #0070f3;
+}
+
+/* Collapse to stacked view if screen is too narrow */
+@media (max-width: 1024px) {
+    .split-workspace-panel {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 24px;
+    }
+    .panel-controls-sidebar {
+        width: 100%;
+    }
+}
+
+/* Isolated Parent Section Layout */
+.preview-results-section {
+    width: 100%;
+    max-width: 1400px;
+    margin: 32px auto 0 auto;
+    padding: 0 24px;
+    clear: both; /* Prevents any floating element pollution */
+}
+
+.section-heading {
+    font-size: 1.4rem;
+    color: #0f172a;
+    margin-bottom: 20px;
+    font-weight: 700;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 8px;
+}
+
+/* Master Display Grid for Previews */
+.panel-matrix-display {
+    display: flex;
+    flex-direction: column;
+    gap: 32px; /* Generous separation spacing between workspace canvases */
+    width: 100%;
+    position: relative;
+    z-index: 10;
+}
+
+/* Master Display Grid for Previews */
+.panel-matrix-display {
+    display: flex;
+    flex-direction: column;
+    gap: 32px; /* Generous separation spacing between workspace canvases */
+    width: 100%;
+    position: relative;
+    z-index: 10;
+}
+
+/* Ensure the cards clear internal sizing bounds */
+.split-layout-card {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    width: 100%;
+    min-height: 500px;
+    height: auto; /* Allow dynamic height changes */
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    position: relative; /* Isolates absolute elements inside this block only */
+}
+
+.split-slider-container {
+    position: relative;
+    flex-grow: 1;
+    background: #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: ew-resize;
+    user-select: none;
+    overflow: hidden;
+}
+
+.comparison-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* Keeps image safely locked inside its bounds */
+    max-height: 550px;
+}
+
+/* Highly visible split tracking line */
+.slider-handle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px; /* Distinct line thickness */
+    background: #ffffff; /* Crisp white center core line */
+    /* Twin drop shadows ensure the line stands out on both solid white and pitch black backgrounds */
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.6), 0 0 4px rgba(0, 0, 0, 0.8);
+    pointer-events: none;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+}
+
+/* Center circle knob indicator to help users grab and slide */
+.handle-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: #ffffff;
+    border: 2px solid #1e293b;
+    border-radius: 50%;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    color: #1e293b;
+    font-weight: bold;
+    font-size: 14px;
+    flex-shrink: 0;
+}

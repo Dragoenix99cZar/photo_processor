@@ -17,8 +17,15 @@ impl ImageProcessor {
     pub fn new(raw_bytes: &[u8]) -> Result<ImageProcessor, JsValue> {
         console_error_panic_hook::set_once();
 
-        let img = image::load_from_memory(raw_bytes)
+        let mut img = image::load_from_memory(raw_bytes)
             .map_err(|e| JsValue::from_str(&format!("Failed to parse image bytes: {}", e)))?;
+
+        // STRUCTURAL DOWNSCALING: Limit maximum memory footprint of massive mobile uploads
+        let (w, h) = img.dimensions();
+        const MAX_DIM: u32 = 2048;
+        if w > MAX_DIM || h > MAX_DIM {
+            img = img.resize(MAX_DIM, MAX_DIM, image::imageops::FilterType::Triangle);
+        }
 
         Ok(ImageProcessor {
             original_image: img,
@@ -58,7 +65,6 @@ impl ImageProcessor {
         }
     }
 
-    // Call this incrementally from JS to spin the framework layout clockwise
     pub fn rotate_clockwise(&mut self) {
         self.rotation_angle = (self.rotation_angle + 90) % 360;
     }
@@ -82,21 +88,19 @@ impl ImageProcessor {
         target_h: u32,
         quality: u8,
     ) -> Result<Vec<u8>, JsValue> {
-        // Pre-rotate the core reference canvas layout before cutting clipping matrix windows out
-        let rotated_base = match self.rotation_angle {
-            90 => self.original_image.rotate90(),
-            180 => self.original_image.rotate180(),
-            270 => self.original_image.rotate270(),
-            _ => self.original_image.clone(),
-        };
+        // Source dimensions BEFORE any rotation matrices are applied
+        let (orig_w, orig_h) = self.original_image.dimensions();
 
-        let (orig_w, orig_h) = rotated_base.dimensions();
+        // Define UI Viewport Workspace scaling standard baseline limits
         let view_size = 600.0;
         let scale = self.zoom_factor;
 
+        // SUPPORT FOR NON-SQUARE ASPECT RATIOS: Calculate relative spatial crop boundaries
+        let aspect_ratio = target_w as f32 / target_h as f32;
         let crop_w = (view_size / scale) as i32;
-        let crop_h = crop_w;
+        let crop_h = ((view_size / aspect_ratio) / scale) as i32;
 
+        // ZERO-COPY TRANSFORMS: Calculate structural centers directly against initial matrix coordinates
         let src_x =
             ((orig_w as f32 / 2.0) - (self.offset_x as f32 / scale) - (crop_w as f32 / 2.0)) as i32;
         let src_y =
@@ -116,21 +120,32 @@ impl ImageProcessor {
         let intersect_w = x_end - x_start;
         let intersect_h = y_end - y_start;
 
-        let cropped_slice = rotated_base.crop_imm(x_start, y_start, intersect_w, intersect_h);
+        // Extract raw slice without deep cloning the whole canvas architecture
+        let cropped_slice =
+            self.original_image
+                .crop_imm(x_start, y_start, intersect_w, intersect_h);
+
+        // FIRST ROTATE THEN CROP EFFECT: Rotate ONLY the lightweight cropped slice
+        let rotated_slice = match self.rotation_angle {
+            90 => cropped_slice.rotate90(),
+            180 => cropped_slice.rotate180(),
+            270 => cropped_slice.rotate270(),
+            _ => cropped_slice,
+        };
 
         let res_ratio = target_w as f32 / view_size;
         let final_slice_w = ((intersect_w as f32 * scale) * res_ratio).round() as u32;
         let final_slice_h = ((intersect_h as f32 * scale) * res_ratio).round() as u32;
 
-        let resized_slice = cropped_slice.resize_exact(
+        let resized_slice = rotated_slice.resize_exact(
             final_slice_w.max(1),
             final_slice_h.max(1),
             image::imageops::FilterType::Lanczos3,
         );
 
-        let is_jpeg = format_str == "jpeg";
+        let is_jpeg = format_str == "jpeg" || format_str == "jpg";
         let bg_color = if is_jpeg {
-            Rgba([255, 255, 255, 255])
+            Rgba([255, 255, 255, 255]) // Strict white backdrop compliance for visa profiles
         } else {
             Rgba([0, 0, 0, 0])
         };
@@ -170,21 +185,25 @@ impl ImageProcessor {
         let mut cursor = Cursor::new(&mut buffer);
         let dynamic_canvas = DynamicImage::ImageRgba8(final_canvas);
 
+        // OPTIMIZED IMAGE FORMATS MATRIX: Mapped strictly to v0.25 casing semantics
         let format = match format_str {
-            "png" | "webp" => ImageFormat::Png,
+            "png" => ImageFormat::Png,
+            "webp" => ImageFormat::WebP, // Explicit capital P for ImageFormat enum variant
             _ => ImageFormat::Jpeg,
         };
 
+        // Streamlined v0.25 zero-overhead binary block serializers
         if format == ImageFormat::Jpeg {
             let mut encoder =
                 image::codecs::jpeg::JpegEncoder::new_with_quality(&mut cursor, quality);
             encoder
                 .encode_image(&dynamic_canvas)
-                .map_err(|e| JsValue::from_str(&format!("{}", e)))?;
+                .map_err(|e| JsValue::from_str(&format!("JPEG Serialization failure: {}", e)))?;
         } else {
-            dynamic_canvas
-                .write_to(&mut cursor, format)
-                .map_err(|e| JsValue::from_str(&format!("{}", e)))?;
+            // Dynamic routing using write_to handles the updated internal v0.25 WebP pure-Rust encoder structures natively
+            dynamic_canvas.write_to(&mut cursor, format).map_err(|e| {
+                JsValue::from_str(&format!("Format conversion failure ({:?}): {}", format, e))
+            })?;
         }
 
         Ok(buffer)
